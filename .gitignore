@@ -102,3 +102,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+pybert/output/checkpoints/
+pybert/pretrain/

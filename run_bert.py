@@ -31,6 +31,7 @@ def run_train(args):
     id2label = {i: label for i, label in enumerate(label_list)}
 
     train_data = processor.get_train(config['data_dir'] / f"{args.data_name}.train.pkl")
+    # print(train_data.shape())
     train_examples = processor.create_examples(lines=train_data,
                                                example_type='train',
                                                cached_examples_file=config[
@@ -42,6 +43,7 @@ def run_train(args):
                                                    args.train_max_seq_len, args.arch
                                                ))
     train_dataset = processor.create_dataset(train_features, is_sorted=args.sorted)
+    # print(train_dataset.shape())
     if args.sorted:
         train_sampler = SequentialSampler(train_dataset)
     else:
@@ -152,6 +154,9 @@ def run_test(args):
                           n_gpu=args.n_gpu)
     result = predictor.predict(data=test_dataloader)
     print(result)
+    with open('pybert/dataset/predict.txt', 'w') as f:
+        for line in result:
+            f.write(str(line) + '\n')
 
 
 def main():

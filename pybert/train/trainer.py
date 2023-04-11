@@ -95,6 +95,7 @@ class Trainer(object):
             batch = tuple(t.to(self.device) for t in batch)
             input_ids, input_mask, segment_ids, label_ids = batch
             logits = self.model(input_ids, segment_ids,input_mask)
+            # print(label_ids)
             loss = self.criterion(output=logits,target=label_ids)
             if len(self.args.n_gpu) >= 2:
                 loss = loss.mean()

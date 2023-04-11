@@ -68,10 +68,10 @@ class TaskData(object):
         data = pd.read_csv(raw_data_path)
         for row in data.values:
             if is_train:
-                target = row[2:]
+                target = row[3:]
             else:
                 target = [-1,-1,-1,-1,-1,-1]
-            sentence = str(row[1])
+            sentence = str(row[2])
             if preprocessor:
                 sentence = preprocessor(sentence)
             if sentence:
