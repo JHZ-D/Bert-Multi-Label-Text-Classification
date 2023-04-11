@@ -6,6 +6,7 @@ from ..common.tools import logger
 from ..callback.progressbar import ProgressBar
 from torch.utils.data import TensorDataset
 from transformers import BertTokenizer
+from pybert.configs.basic_config import config
 
 class InputExample(object):
     def __init__(self, guid, text_a, text_b=None, label=None):
@@ -52,11 +53,16 @@ class BertProcessor(object):
     def get_test(self,lines):
         return lines
 
-    def get_labels(self):
+    def get_labels(self, data_name):
         """Gets the list of labels for this data set."""
         # return ["toxic","severe_toxic","obscene","threat","insult","identity_hate"]
         # return ['0', '1']
-        return [str(i) for i in range(17)]
+        # return [str(i) for i in range(17)]
+        path = str(config['raw_data_path']).format(data_name=data_name)
+        with open(path, newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            headline = next(reader)
+        return headline[3:]
 
     @classmethod
     def read_data(cls, input_file,quotechar = None):

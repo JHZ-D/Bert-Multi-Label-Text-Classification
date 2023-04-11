@@ -3,9 +3,10 @@ from pybert.configs.basic_config import config
 from pybert.io.bert_processor import BertProcessor
 from pybert.model.bert_for_multi_label import BertForMultiLable
 
-def main(text,arch,max_seq_length,do_lower_case):
+
+def main(text,arch,max_seq_length,do_lower_case,data_name):
     processor = BertProcessor(vocab_path=config['bert_vocab_path'], do_lower_case=do_lower_case)
-    label_list = processor.get_labels()
+    label_list = processor.get_labels(data_name)
     id2label = {i: label for i, label in enumerate(label_list)}
     model = BertForMultiLable.from_pretrained(config['checkpoint_dir'] /f'{arch}', num_labels=len(label_list))
     tokens = processor.tokenizer.tokenize(text)
@@ -42,7 +43,8 @@ MIT © 2021 Plotly, Inc.'''
     max_seq_length = 512
     do_loer_case = True
     arch = 'bert'
-    probs = main(text,arch,max_seq_length,do_loer_case)
+    data_name = '0'
+    probs = main(text,arch,max_seq_length,do_loer_case,data_name)
     print(probs)
     
 #   '''

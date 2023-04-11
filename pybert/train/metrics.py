@@ -4,6 +4,7 @@ from tqdm import tqdm
 import numpy as np
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import f1_score, classification_report
+import pandas as pd
 
 __call__ = ['Accuracy','AUC','F1Score','EntityScore','ClassReport','MultiLabelReport','AccuracyThresh']
 
@@ -209,13 +210,19 @@ class F1Score(Metric):
         计算整个结果
         :return:
         '''
-        self.y_true = target.cpu().numpy()
-        if self.normalizate and self.task_type == 'binary':
-            y_prob = logits.sigmoid().data.cpu().numpy()
-        elif self.normalizate and self.task_type == 'multiclass':
-            y_prob = logits.softmax(-1).data.cpu().detach().numpy()
+        if isinstance(target, pd.Series):
+            self.y_true = target.to_numpy()
         else:
-            y_prob = logits.cpu().detach().numpy()
+            self.y_true = target.cpu().numpy()
+        if isinstance(logits, np.ndarray):
+            y_prob = logits
+        else:
+            if self.normalizate and self.task_type == 'binary':
+                y_prob = logits.sigmoid().data.cpu().numpy()
+            elif self.normalizate and self.task_type == 'multiclass':
+                y_prob = logits.softmax(-1).data.cpu().detach().numpy()
+            else:
+                y_prob = logits.cpu().detach().numpy()
 
         if self.task_type == 'binary':
             if self.thresh and self.search_thresh == False:

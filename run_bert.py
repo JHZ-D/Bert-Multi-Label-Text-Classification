@@ -15,10 +15,14 @@ from pybert.model.bert_for_multi_label import BertForMultiLable
 from pybert.preprocessing.preprocessor import EnglishPreProcessor
 from pybert.callback.modelcheckpoint import ModelCheckpoint
 from pybert.callback.trainingmonitor import TrainingMonitor
-from pybert.train.metrics import AUC, AccuracyThresh, MultiLabelReport
+from pybert.train.metrics import AUC, AccuracyThresh, MultiLabelReport, F1Score
 from pybert.callback.optimizater.adamw import AdamW
 from pybert.callback.lr_schedulers import get_linear_schedule_with_warmup
 from torch.utils.data import RandomSampler, SequentialSampler
+import os
+import pandas as pd
+import numpy as np
+import csv
 
 warnings.filterwarnings("ignore")
 
@@ -26,7 +30,7 @@ warnings.filterwarnings("ignore")
 def run_train(args):
     # --------- data
     processor = BertProcessor(vocab_path=config['bert_vocab_path'], do_lower_case=args.do_lower_case)
-    label_list = processor.get_labels()
+    label_list = processor.get_labels(args.data_name)
     label2id = {label: i for i, label in enumerate(label_list)}
     id2label = {i: label for i, label in enumerate(label_list)}
 
@@ -127,7 +131,7 @@ def run_test(args):
                                         is_train=False)
     lines = list(zip(sentences, targets))
     processor = BertProcessor(vocab_path=config['bert_vocab_path'], do_lower_case=args.do_lower_case)
-    label_list = processor.get_labels()
+    label_list = processor.get_labels(args.data_name)
     id2label = {i: label for i, label in enumerate(label_list)}
 
     test_data = processor.get_test(lines=lines)
@@ -154,9 +158,32 @@ def run_test(args):
                           n_gpu=args.n_gpu)
     result = predictor.predict(data=test_dataloader)
     print(result)
-    with open('pybert/dataset/predict.txt', 'w') as f:
-        for line in result:
-            f.write(str(line) + '\n')
+    # with open('pybert/dataset/predict.txt', 'w') as f:
+    #     for line in result:
+    #         f.write(str(line) + '\n')
+    np.savetxt(config['data_dir'] / 'predict.txt', result, delimiter=",")
+    
+    # ----------- evaluating
+    logger.info('model evaluating....')
+    df = pd.read_csv(config['test_label_path'])
+    evaresult = []
+    for i, label in id2label.items():
+        y_true = df.iloc[:, i + 1]
+        f1score = F1Score()
+        f1score(logits=result[:, i], target=y_true)
+        thre, f1 = f1score.thresh_search(y_prob=result[:, i])
+        print(f"label:{label} Best thresh: {thre} - F1 Score: {f1:.4f}")
+        evaresult.append({'label': label, 'thresh': thre, 'f1': f1})
+    with open(config['data_dir'] / 'test_eval.csv', "w") as f:
+        # Create a DictWriter object with the keys as fieldnames
+        writer = csv.DictWriter(f, fieldnames=evaresult[0].keys())
+        # Write the header row
+        writer.writeheader()
+        # Write the list of dicts as rows
+        writer.writerows(evaresult)
+        # f1 = f1score.value()
+        # auc = roc_auc_score(y_score=self.y_prob[:, i], y_true=y_true)
+        # print(f"label:{label} - f1: {f1:.4f}")
 
 
 def main():
@@ -193,10 +220,17 @@ def main():
     parser.add_argument('--fp16', action='store_true')
     parser.add_argument('--fp16_opt_level', type=str, default='O1')
     args = parser.parse_args()
-
+    config['raw_data_path'] = Path(str(config['raw_data_path']).format(data_name=args.data_name))
+    config['test_path'] = Path(str(config['test_path']).format(data_name=args.data_name))
+    config['test_label_path'] = Path(str(config['test_label_path']).format(data_name=args.data_name))
+    config['data_dir'] = Path(str(config['data_dir']).format(data_name=args.data_name))
+    config['log_dir'] = Path(str(config['log_dir']).format(data_name=args.data_name))
+    config['figure_dir'] = Path(str(config['figure_dir']).format(data_name=args.data_name))
+    config['checkpoint_dir'] = Path(str(config['checkpoint_dir']).format(data_name=args.data_name))
+    config['log_dir'].mkdir(parents=True, exist_ok=True)
     init_logger(log_file=config['log_dir'] / f'{args.arch}-{time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime())}.log')
     config['checkpoint_dir'] = config['checkpoint_dir'] / args.arch
-    config['checkpoint_dir'].mkdir(exist_ok=True)
+    config['checkpoint_dir'].mkdir(parents=True, exist_ok=True)
     # Good practice: save your training arguments together with the trained model
     torch.save(args, config['checkpoint_dir'] / 'training_args.bin')
     seed_everything(args.seed)
