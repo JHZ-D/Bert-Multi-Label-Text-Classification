@@ -74,7 +74,7 @@ class Trainer(object):
         self.targets = torch.cat(self.targets, dim = 0).cpu().detach()
         loss = self.criterion(target = self.targets, output=self.outputs)
         self.result['valid_loss'] = loss.item()
-        print("------------- valid result --------------")
+        print("\n------------- valid result --------------")
         if self.epoch_metrics:
             for metric in self.epoch_metrics:
                 metric(logits=self.outputs, target=self.targets)
@@ -169,7 +169,8 @@ class Trainer(object):
 
             # early_stopping
             if self.early_stopping:
-                self.early_stopping.epoch_step(epoch=epoch, current=logs[self.early_stopping.monitor])
+                self.early_stopping.epoch_step(current=logs[self.early_stopping.monitor])
+                print(f'early_stopping.wait: {self.early_stopping.wait}')
                 if self.early_stopping.stop_training:
                     break
 

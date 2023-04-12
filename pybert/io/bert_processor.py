@@ -193,6 +193,6 @@ class BertProcessor(object):
         all_label_ids = torch.tensor([f.label_id for f in features],dtype=torch.long)
         all_input_lens = torch.tensor([f.input_len for f in features], dtype=torch.long)
         dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids,all_input_lens)
-        print(all_label_ids)
+        # print(all_label_ids)
         return dataset
 

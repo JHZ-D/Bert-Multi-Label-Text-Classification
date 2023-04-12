@@ -18,6 +18,7 @@ from pybert.callback.trainingmonitor import TrainingMonitor
 from pybert.train.metrics import AUC, AccuracyThresh, MultiLabelReport, F1Score
 from pybert.callback.optimizater.adamw import AdamW
 from pybert.callback.lr_schedulers import get_linear_schedule_with_warmup
+from pybert.callback.earlystopping import EarlyStopping
 from torch.utils.data import RandomSampler, SequentialSampler
 import os
 import pandas as pd
@@ -115,7 +116,7 @@ def run_train(args):
     logger.info("  Total optimization steps = %d", t_total)
 
     trainer = Trainer(args= args,model=model,logger=logger,criterion=BCEWithLogLoss(),optimizer=optimizer,
-                      scheduler=scheduler,early_stopping=None,training_monitor=train_monitor,
+                      scheduler=scheduler,early_stopping=EarlyStopping(patience=5, monitor='valid_loss'),training_monitor=train_monitor,
                       model_checkpoint=model_checkpoint,
                       batch_metrics=[AccuracyThresh(thresh=0.5)],
                       epoch_metrics=[AUC(average='micro', task_type='binary'),
@@ -208,8 +209,8 @@ def main():
     parser.add_argument('--gradient_accumulation_steps', type=int, default=1)
     parser.add_argument("--train_batch_size", default=8, type=int)
     parser.add_argument('--eval_batch_size', default=8, type=int)
-    parser.add_argument("--train_max_seq_len", default=256, type=int)
-    parser.add_argument("--eval_max_seq_len", default=256, type=int)
+    parser.add_argument("--train_max_seq_len", default=512, type=int)
+    parser.add_argument("--eval_max_seq_len", default=512, type=int)
     parser.add_argument('--loss_scale', type=float, default=0)
     parser.add_argument("--warmup_proportion", default=0.1, type=float)
     parser.add_argument("--weight_decay", default=0.01, type=float)
@@ -241,7 +242,7 @@ def main():
         targets, sentences = data.read_data(raw_data_path=config['raw_data_path'],
                                             preprocessor=EnglishPreProcessor(),
                                             is_train=True)
-        data.train_val_split(X=sentences, y=targets, shuffle=True, stratify=False,
+        data.train_val_split(X=sentences, y=targets, shuffle=True, stratify=True,
                              valid_size=args.valid_size, data_dir=config['data_dir'],
                              data_name=args.data_name)
     if args.do_train:

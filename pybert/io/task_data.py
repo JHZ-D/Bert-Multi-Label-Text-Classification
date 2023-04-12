@@ -4,6 +4,8 @@ from tqdm import tqdm
 from ..common.tools import save_pickle
 from ..common.tools import logger
 from ..callback.progressbar import ProgressBar
+from skmultilearn.model_selection import iterative_train_test_split
+import numpy as np
 
 class TaskData(object):
     def __init__(self):
@@ -12,27 +14,42 @@ class TaskData(object):
                         seed = None,data_name = None,data_dir = None):
         pbar = ProgressBar(n_total=len(X),desc='bucket')
         logger.info('split raw data into train and valid')
+        # ylist = [arr.tolist() for arr in y]
+        # # print(ylist)
+        # for mm in ylist:
+        #     if mm[0] == 0:
+        #         print(mm)
         if stratify:
-            num_classes = len(list(set(y)))
-            train, valid = [], []
-            bucket = [[] for _ in range(num_classes)]
-            for step,(data_x, data_y) in enumerate(zip(X, y)):
-                bucket[int(data_y)].append((data_x, data_y))
-                pbar(step=step)
-            del X, y
-            for bt in tqdm(bucket, desc='split'):
-                N = len(bt)
-                if N == 0:
-                    continue
-                test_size = int(N * valid_size)
-                if shuffle:
-                    random.seed(seed)
-                    random.shuffle(bt)
-                valid.extend(bt[:test_size])
-                train.extend(bt[test_size:])
+            # num_classes = len(list(set(y)))
+            # train, valid = [], []
+            # bucket = [[] for _ in range(num_classes)]
+            # for step,(data_x, data_y) in enumerate(zip(X, y)):
+            #     bucket[int(data_y)].append((data_x, data_y))
+            #     pbar(step=step)
+            # del X, y
+            # for bt in tqdm(bucket, desc='split'):
+            #     N = len(bt)
+            #     if N == 0:
+            #         continue
+            #     test_size = int(N * valid_size)
+            #     if shuffle:
+            #         random.seed(seed)
+            #         random.shuffle(bt)
+            #     valid.extend(bt[:test_size])
+            #     train.extend(bt[test_size:])
+            # if shuffle:
+            #     random.seed(seed)
+            #     random.shuffle(train)
+            X_train, y_train, X_test, y_test = iterative_train_test_split(np.array(X), np.array(y, dtype=int), test_size=valid_size)
+            train = [(data_x, data_y) for step,(data_x, data_y) in enumerate(zip(X_train, y_train))]
+            valid = [(data_x, data_y) for step,(data_x, data_y) in enumerate(zip(X_test, y_test))]
+            # print(y_train)
+            # print(y_test)
+            # 混洗train数据集
             if shuffle:
                 random.seed(seed)
                 random.shuffle(train)
+
         else:
             data = []
             for step,(data_x, data_y) in enumerate(zip(X, y)):
