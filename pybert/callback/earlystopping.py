@@ -71,13 +71,13 @@ class EarlyStopping(object):
             self.best = np.Inf if self.monitor_op == np.less else -np.Inf
 
     def epoch_step(self,current):
-        print(f"current: {current}, best: {self.best}")
+        # print(f"current: {current}, best: {self.best}")
         if self.monitor_op(current - self.min_delta, self.best):
             self.best = current
             self.wait = 0
         else:
             self.wait += 1
-            print(f"wait: {self.wait}")
+            # print(f"wait: {self.wait}")
             if self.wait >= self.patience:
                 if self.verbose >0:
                     logger.info(f"{self.patience} epochs with no improvement after which training will be stopped")

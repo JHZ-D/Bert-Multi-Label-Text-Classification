@@ -170,7 +170,7 @@ class Trainer(object):
             # early_stopping
             if self.early_stopping:
                 self.early_stopping.epoch_step(current=logs[self.early_stopping.monitor])
-                print(f'early_stopping.wait: {self.early_stopping.wait}')
+                # print(f'early_stopping.wait: {self.early_stopping.wait}')
                 if self.early_stopping.stop_training:
                     break
 

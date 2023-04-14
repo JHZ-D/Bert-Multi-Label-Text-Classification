@@ -103,10 +103,13 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-pybert/output/checkpoints/
+pybert/output/
 pybert/pretrain/
 
 *train.csv
 *test.csv
 *test_labels.csv
 *test_merge.csv
+
+cached_*_bert
+*.pkl
